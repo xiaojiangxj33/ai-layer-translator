@@ -120,13 +120,6 @@ com.aitranslate.layers/
 
 ---
 
-## 安全提示
-
-- `ai_layer_translator.json` 内含你的 **API Key**，已通过 `.gitignore` 排除，**请勿提交或外传该文件**
-- 插件文件夹请勿直接分享给他人（其中包含你的 API 配置）
-
----
-
 ## License
 
 本项目仅供个人学习与使用。
