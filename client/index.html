@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="panel">
+        <div class="panel-head">
+            <div class="brand">
+                <div class="logo">译</div>
+                <div class="t">AI 图层工具<small>LAYER TRANSLATOR</small></div>
+            </div>
+            <div class="status" id="statusEl"><span class="dot"></span><span id="statusTxt">初始化…</span></div>
+        </div>
+
+        <!-- 页签切换 -->
+        <div class="tabs">
+            <button class="tab active" data-page="translatePage">AI图层翻译</button>
+            <button class="tab" data-page="toolsPage">图层工具</button>
+        </div>
+
+        <div class="panel-body">
+
+            <!-- ========== 页面一：AI图层翻译 ========== -->
+            <div id="translatePage" class="page">
+                <!-- API 配置（可折叠，默认收起） -->
+                <div class="card">
+                    <div class="card-title collapsible-title collapsed" data-target="apiBody">
+                        <span class="bar"></span>API 配置 <span class="hint">输入即自动保存</span><span class="chevron">▾</span>
+                    </div>
+                    <div class="collapsible collapsed" id="apiBody">
+                        <div class="field">
+                            <label>API Base URL</label>
+                            <div class="wrap"><input id="baseUrl" type="text" placeholder="https://api.openai.com/v1" spellcheck="false"/></div>
+                        </div>
+                        <div class="field">
+                            <label>API Key</label>
+                            <div class="wrap">
+                                <input id="apiKey" type="password" placeholder="sk-..." spellcheck="false"/>
+                                <button class="eye" id="toggleKey" title="显示/隐藏">👁</button>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>模型</label>
+                            <div class="wrap"><input id="model" type="text" placeholder="gpt-4o-mini" spellcheck="false"/></div>
+                        </div>
+                        <div class="field">
+                            <label>翻译风格提示词</label>
+                            <textarea id="prompt" rows="4" spellcheck="false" placeholder="例如：All parts use [part]_[subpart] format, lowercase, snake_case
+Base parts layered from big to small, main to sub:
+head_ — head
+body_ — body/torso
+arm_ / leg_ / foot_ — arms/legs/feet
+tail_ / wing_ / neck_ — tail/wings/neck
+Symmetrical parts use _L / _R suffix, e.g. arm_L, arm_R
+Primary/sub parts use _main / _sub, e.g. wing_L_main, wing_L_sub
+Subdivide with specific names, e.g. head_eye, head_mouth, leg_upper, leg_lower
+No Chinese, no spaces or hyphens, only lowercase letters and underscores"></textarea>
+                        </div>
+                        <div class="save-row"><button id="saveCfg" class="btn-ghost">保存配置</button></div>
+                    </div>
+                </div>
+
+                <!-- 操作步骤 -->
+                <div class="card">
+                    <div class="card-title"><span class="bar"></span>操作步骤</div>
+                    <div class="steps">
+                        <button id="scan" class="step-btn"><span class="n">1</span>扫描中文图层</button>
+                        <button id="translate" class="step-btn" disabled><span class="n">2</span>AI 翻译</button>
+                        <button id="apply" class="step-btn" disabled><span class="n">3</span>应用到 PS</button>
+                    </div>
+                </div>
+
+                <!-- 翻译预览 -->
+                <div class="card">
+                    <div class="card-title"><span class="bar"></span>翻译预览 <span class="hint" id="countTxt">0 层</span></div>
+                    <div class="table-head"><span>原图层名</span><span>翻译结果</span></div>
+                    <div class="table-scroll">
+                        <table id="preview"></table>
+                        <div class="empty" id="emptyTip">扫描文档后，这里会列出待翻译的图层</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 页面二：图层工具 ========== -->
+            <div id="toolsPage" class="page" style="display:none">
+                <div class="card">
+                    <div class="card-title"><span class="bar"></span>图层工具</div>
+
+                    <div class="tool-btns">
+                        <button id="checkBtn" class="tool-btn">检查重名/中文</button>
+                        <button id="renameBtn" class="tool-btn">批量重命名</button>
+                        <button id="smartBtn" class="tool-btn">智能化图层</button>
+                        <button id="exportBtn" class="tool-btn">批量导出PNG</button>
+                        <button id="folderRenameBtn" class="tool-btn">文件夹内重命名</button>
+                    </div>
+
+                    <div class="tool-result" id="checkResult" style="display:none"></div>
+
+                    <!-- 批量重命名表单 -->
+                    <div class="sub-form" id="renameForm" style="display:none">
+                        <div class="radio-row">
+                            <label><input type="radio" name="renameMode" value="seq" checked> 顺序命名</label>
+                            <label><input type="radio" name="renameMode" value="prefix"> 添加前缀</label>
+                            <label><input type="radio" name="renameMode" value="folder"> 文件夹内图层重命名</label>
+                        </div>
+                        <div class="form-note" id="folderNote" style="display:none">将选中的图层组（文件夹）内部所有图层重命名为文件夹名，不加后缀，名称完全相同。</div>
+                        <div class="field" id="seqFields">
+                            <label>基础名称</label>
+                            <div class="wrap"><input id="baseName" type="text" value="Layer_" spellcheck="false"/></div>
+                            <label style="margin-top:6px">起始序号</label>
+                            <div class="wrap"><input id="startNum" type="text" value="1" spellcheck="false"/></div>
+                        </div>
+                        <div class="field" id="prefixFields" style="display:none">
+                            <label>前缀</label>
+                            <div class="wrap"><input id="prefixInput" type="text" value="Prefix_" spellcheck="false"/></div>
+                        </div>
+                        <div class="form-actions">
+                            <button id="renameConfirm" class="btn-ghost">确定</button>
+                            <button id="renameCancel" class="btn-ghost" style="margin-left:8px">取消</button>
+                        </div>
+                    </div>
+
+                    <!-- 批量导出PNG表单 -->
+                    <div class="sub-form" id="exportForm" style="display:none">
+                        <div class="form-note">导出全部顶层图层，完整画布尺寸，不裁切</div>
+                        <div class="field">
+                            <label>导出文件夹</label>
+                            <div class="wrap">
+                                <input id="exportFolder" type="text" placeholder="点击右侧选择或粘贴文件夹路径" spellcheck="false"/>
+                                <button class="eye" id="browseFolder" title="选择文件夹">…</button>
+                            </div>
+                        </div>
+                        <div class="radio-row">
+                            <label><input type="radio" name="exportMode" value="layer" checked> 使用图层名</label>
+                            <label><input type="radio" name="exportMode" value="prefix"> 前缀+序号</label>
+                        </div>
+                        <div class="field" id="exportPrefixFields" style="display:none">
+                            <label>前缀</label>
+                            <div class="wrap"><input id="exportPrefix" type="text" value="frame" spellcheck="false"/></div>
+                            <label style="margin-top:6px">起始序号</label>
+                            <div class="wrap"><input id="exportStartNum" type="text" value="0" spellcheck="false"/></div>
+                        </div>
+                        <div class="form-actions">
+                            <button id="exportConfirm" class="btn-ghost">开始导出</button>
+                            <button id="exportCancel" class="btn-ghost" style="margin-left:8px">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日志（公共底部） -->
+        <div class="log-card">
+            <div class="card-title"><span class="bar"></span>运行日志</div>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+    <script src="../CSInterface.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
